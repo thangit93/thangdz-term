@@ -69,6 +69,7 @@ thangdz-term/
 | `dz reload` | restart the shell (`exec zsh`)                     |
 | `dz doctor` | health check: symlink, plugins, theme, remote      |
 | `dz path`   | print the repo directory                           |
+| `dz logo`   | print the ThangDZ ASCII logo, or render custom text |
 | `dz help`   | show help                                          |
 
 ## Customizing

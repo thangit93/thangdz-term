@@ -19,6 +19,14 @@ function dz() {
     path)
       echo "$MY_ZSH"
       ;;
+    logo)
+      shift
+      if [[ $# -gt 0 ]]; then
+        command figlet "$@" 2>/dev/null || cat "$MY_ZSH/lib/logo.txt"
+      else
+        cat "$MY_ZSH/lib/logo.txt"
+      fi
+      ;;
     help|--help|-h)
       _dz_help
       ;;
@@ -39,6 +47,7 @@ Usage:
   dz reload    Restart the shell
   dz doctor    Health check: symlink, plugins, theme, remote
   dz path      Print the repo directory
+  dz logo      Print the ThangDZ logo (or: dz logo <text> renders via figlet)
   dz help      Show this help
 EOF
 }

@@ -17,6 +17,15 @@ else
   git clone "$REPO_URL" "$DIR"
 fi
 
+if ! command -v figlet >/dev/null 2>&1; then
+  echo "Installing figlet (used by 'dz logo')..."
+  if command -v brew >/dev/null 2>&1; then
+    brew install figlet
+  else
+    echo "  brew not found - skipping (dz logo falls back to bundled art)"
+  fi
+fi
+
 bash "$DIR/install.sh"
 
 if [[ -t 0 ]]; then
