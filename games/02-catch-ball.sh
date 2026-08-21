@@ -32,8 +32,16 @@ HEIGHT=$(( term_rows - 7 ))
 
 PADDLE=$(( WIDTH / 5 ))
 (( PADDLE < 6 )) && PADDLE=6
-PADDLE_STEP=2
 FRAME=0.05
+
+# A terminal never reports key *releases*, and auto-repeat only starts after
+# the OS repeat delay (~0.5s), so a fixed step per keypress can't keep up with
+# the ball. A keypress instead sets a direction and the paddle glides on for
+# PADDLE_COAST frames; holding the key refreshes it into continuous motion.
+PADDLE_SPEED=3
+PADDLE_COAST=5
+pdir=0
+pcoast=0
 
 score=0
 lives=3
@@ -87,8 +95,17 @@ draw() {
   printf '%s' "$buf"
 }
 
-move_right() { pcol=$(( pcol + PADDLE_STEP )); (( pcol > WIDTH - PADDLE )) && pcol=$(( WIDTH - PADDLE )); return 0; }
-move_left()  { pcol=$(( pcol - PADDLE_STEP )); (( pcol < 0 )) && pcol=0; return 0; }
+move_right() { pdir=1;  pcoast=$PADDLE_COAST; return 0; }
+move_left()  { pdir=-1; pcoast=$PADDLE_COAST; return 0; }
+
+glide_paddle() {
+  (( pcoast > 0 )) || return 0
+  pcol=$(( pcol + pdir * PADDLE_SPEED ))
+  (( pcol < 0 )) && pcol=0
+  (( pcol > WIDTH - PADDLE )) && pcol=$(( WIDTH - PADDLE ))
+  pcoast=$(( pcoast - 1 ))
+  return 0
+}
 
 # Drain every key buffered since the last frame; never blocks.
 handle_keys() {
@@ -124,6 +141,7 @@ while (( lives > 0 )) && ! $quit; do
   handle_keys
   $quit && break
 
+  glide_paddle
   frames=$((frames + 1))
   if (( frames % fall == 0 )); then
     brow=$((brow + 1))

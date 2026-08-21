@@ -40,12 +40,21 @@ BRICK_TOP=1
 BCOLS=$(( WIDTH / BRICK_W ))
 PADDLE_W=$(( WIDTH / 5 ))
 (( PADDLE_W < 6 )) && PADDLE_W=6
-PADDLE_STEP=2
 PADDLE_ROW=$(( HEIGHT - 1 ))
+
+# A terminal never reports key *releases*, and auto-repeat only kicks in after
+# the OS repeat delay (~0.5s), so moving a fixed step per keypress leaves the
+# paddle hopelessly behind the ball. Instead a keypress sets a direction and
+# the paddle keeps gliding for PADDLE_COAST frames: one tap travels a useful
+# distance, and holding the key refreshes the glide into continuous motion.
+PADDLE_SPEED=3
+PADDLE_COAST=5
+pdir=0
+pcoast=0
 
 # The ball steps once per frame, so the frame delay *is* the ball speed;
 # clearing bricks shortens it.
-SPEEDS=(0.040 0.034 0.028 0.024 0.020)
+SPEEDS=(0.055 0.046 0.038 0.032 0.027)
 level=0
 FRAME=${SPEEDS[0]}
 
@@ -136,8 +145,17 @@ draw() {
   printf '%s' "$buf"
 }
 
-move_right() { pcol=$(( pcol + PADDLE_STEP )); (( pcol > WIDTH - PADDLE_W )) && pcol=$(( WIDTH - PADDLE_W )); return 0; }
-move_left()  { pcol=$(( pcol - PADDLE_STEP )); (( pcol < 0 )) && pcol=0; return 0; }
+move_right() { pdir=1;  pcoast=$PADDLE_COAST; return 0; }
+move_left()  { pdir=-1; pcoast=$PADDLE_COAST; return 0; }
+
+glide_paddle() {
+  (( pcoast > 0 )) || return 0
+  pcol=$(( pcol + pdir * PADDLE_SPEED ))
+  (( pcol < 0 )) && pcol=0
+  (( pcol > WIDTH - PADDLE_W )) && pcol=$(( WIDTH - PADDLE_W ))
+  pcoast=$(( pcoast - 1 ))
+  return 0
+}
 
 # Drain every key buffered since the last frame; never blocks.
 handle_keys() {
@@ -247,6 +265,7 @@ while (( lives > 0 )) && ! $quit; do
   handle_keys
   $quit && break
 
+  glide_paddle
   step_ball
   if (( left == 0 )); then
     won=true
