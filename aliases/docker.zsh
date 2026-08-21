@@ -1,0 +1,10 @@
+# Docker shortcuts
+alias dk='docker'
+alias dkps='docker ps'
+alias dkpsa='docker ps -a'
+alias dki='docker images'
+alias dkr='docker run --rm'
+alias dco='docker compose'
+alias dcu='docker compose up'
+alias dcd='docker compose down'
+alias dcol='docker compose logs'
