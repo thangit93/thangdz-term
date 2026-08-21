@@ -3,11 +3,11 @@
 
 # Auto-detect the repo directory via the ~/.zshrc symlink
 _my_zsh_rc="${(%):-%N}"
-export MY_ZSH="${_my_zsh_rc:A:h}"
+export THANGDZ="${_my_zsh_rc:A:h}"
 unset _my_zsh_rc
 # If you copy this file instead of symlinking, set it manually:
-# export MY_ZSH="$HOME/Projects/thangdz-term"
-[[ -f "$MY_ZSH/init.zsh" ]] || export MY_ZSH="$HOME/Projects/thangdz-term"
+# export THANGDZ="$HOME/Projects/thangdz-term"
+[[ -f "$THANGDZ/init.zsh" ]] || export THANGDZ="$HOME/Projects/thangdz-term"
 
 # Theme (themes/<name>.zsh)
 ZSH_THEME="default"
@@ -16,7 +16,7 @@ ZSH_THEME="default"
 plugins=(zsh-autosuggestions zsh-syntax-highlighting)
 
 # Load the framework
-source "$MY_ZSH/init.zsh"
+source "$THANGDZ/init.zsh"
 
 # ==================== Personal config ====================
 

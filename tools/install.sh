@@ -26,7 +26,7 @@ if ! command -v figlet >/dev/null 2>&1; then
   fi
 fi
 
-bash "$DIR/install.sh"
+bash "$DIR/install.sh" "${1:-}"
 
 if [[ -t 0 ]]; then
   echo "Starting a fresh zsh..."

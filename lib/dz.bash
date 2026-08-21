@@ -1,5 +1,5 @@
-# dz — CLI for managing thangdz-term (like omz)
-function dz() {
+# dz — CLI for managing thangdz-term (bash version)
+dz() {
   local cmd="${1:-}"
   if [[ -z "$cmd" ]]; then
     _dz_help
@@ -11,7 +11,7 @@ function dz() {
       _dz_update
       ;;
     reload)
-      exec zsh
+      exec bash
       ;;
     doctor)
       _dz_doctor
@@ -38,21 +38,21 @@ function dz() {
   esac
 }
 
-function _dz_help() {
+_dz_help() {
   cat <<'EOF'
 dz — manage thangdz-term
 
 Usage:
   dz update    Pull the latest config from remote and reload the shell
   dz reload    Restart the shell
-  dz doctor    Health check: symlink, plugins, theme, remote
+  dz doctor    Health check: symlink, theme, remote
   dz path      Print the repo directory
   dz logo      Print the ThangDZ logo (or: dz logo <text> renders via figlet)
   dz help      Show this help
 EOF
 }
 
-function _dz_update() {
+_dz_update() {
   if [[ ! -d "$THANGDZ/.git" ]]; then
     echo "dz: no git repo found at $THANGDZ" >&2
     echo "    Did you install by copying instead of git clone?" >&2
@@ -70,7 +70,7 @@ function _dz_update() {
       echo ""
       echo "Updated $prev_head → $new_head"
       echo "Reloading shell..."
-      exec zsh
+      exec bash
     else
       echo ""
       echo "Already up to date ($new_head)"
@@ -83,11 +83,11 @@ function _dz_update() {
   fi
 }
 
-function _dz_doctor() {
+_dz_doctor() {
   local ok=true
 
-  echo "thangdz-term doctor"
-  echo "==================="
+  echo "thangdz-term doctor (bash)"
+  echo "========================="
 
   echo -n "THANGDZ ... "
   if [[ -n "${THANGDZ:-}" && -d "$THANGDZ" ]]; then
@@ -96,37 +96,28 @@ function _dz_doctor() {
     echo "not set ✗"; ok=false
   fi
 
-  echo -n "~/.zshrc symlink ... "
+  echo -n "~/.bashrc symlink ... "
   local target
-  target=$(readlink ~/.zshrc 2>/dev/null || true)
+  target=$(readlink ~/.bashrc 2>/dev/null || true)
   if [[ -n "$target" ]]; then
     echo "$target ✓"
   else
     echo "not a symlink (copy?) ✗"; ok=false
   fi
 
-  echo -n "init.zsh ... "
-  if [[ -f "$THANGDZ/init.zsh" ]]; then
+  echo -n "init.bash ... "
+  if [[ -f "$THANGDZ/init.bash" ]]; then
     echo "✓"
   else
     echo "missing ✗"; ok=false
   fi
 
-  echo -n "theme ($ZSH_THEME) ... "
-  if [[ -f "$THANGDZ/themes/${ZSH_THEME}.zsh" ]]; then
+  echo -n "theme ($BASH_THEME) ... "
+  if [[ -f "$THANGDZ/themes/${BASH_THEME}.bash" ]]; then
     echo "✓"
   else
-    echo "missing $THANGDZ/themes/${ZSH_THEME}.zsh ✗"; ok=false
+    echo "missing $THANGDZ/themes/${BASH_THEME}.bash ✗"; ok=false
   fi
-
-  for _p in ${plugins[@]}; do
-    echo -n "plugin $_p ... "
-    if [[ -f "$THANGDZ/plugins/$_p/$_p.plugin.zsh" || -f "$THANGDZ/plugins/$_p/$_p.zsh" ]]; then
-      echo "✓"
-    else
-      echo "missing ✗"; ok=false
-    fi
-  done
 
   echo -n "git remote ... "
   local remote
