@@ -66,15 +66,14 @@ _dz_update() {
   if git -C "$THANGDZ" pull --rebase --stat; then
     local new_head
     new_head=$(git -C "$THANGDZ" rev-parse --short HEAD)
+    echo ""
     if [[ "$prev_head" != "$new_head" ]]; then
-      echo ""
       echo "Updated $prev_head → $new_head"
-      echo "Reloading shell..."
-      exec bash
     else
-      echo ""
-      echo "Already up to date ($new_head)"
+      echo "Already up to date ($new_head) - reloading anyway"
     fi
+    echo "Reloading shell..."
+    exec bash
   else
     echo ""
     echo "Update failed. Try:
