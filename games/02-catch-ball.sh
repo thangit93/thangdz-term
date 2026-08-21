@@ -32,7 +32,13 @@ HEIGHT=$(( term_rows - 7 ))
 
 PADDLE=$(( WIDTH / 5 ))
 (( PADDLE < 6 )) && PADDLE=6
-FRAME=0.05
+
+# The ball drops one row per frame, so the frame delay *is* the fall speed;
+# every few catches shortens it. The paddle covers PADDLE_SPEED cells in that
+# same frame, so it always outruns the ball by that factor whatever the speed.
+SPEEDS=(0.065 0.055 0.046 0.038 0.032)
+level=0
+FRAME=${SPEEDS[0]}
 
 # A terminal never reports key *releases*, and auto-repeat only starts after
 # the OS repeat delay (~0.5s), so a fixed step per keypress can't keep up with
@@ -48,8 +54,6 @@ lives=3
 pcol=$(( (WIDTH - PADDLE) / 2 ))
 bcol=$(( RANDOM % WIDTH ))
 brow=0
-frames=0
-fall=3          # frames per row — smaller is faster
 quit=false
 
 # Pre-built row pieces: splicing into a blank line keeps a redraw O(rows)
@@ -142,21 +146,19 @@ while (( lives > 0 )) && ! $quit; do
   $quit && break
 
   glide_paddle
-  frames=$((frames + 1))
-  if (( frames % fall == 0 )); then
-    brow=$((brow + 1))
-    if (( brow >= HEIGHT - 1 )); then
-      if (( bcol >= pcol && bcol < pcol + PADDLE )); then
-        score=$((score + 1))
-        if (( score % 3 == 0 && fall > 2 )); then
-          fall=$((fall - 1))
-        fi
-      else
-        lives=$((lives - 1))
+  brow=$((brow + 1))
+  if (( brow >= HEIGHT - 1 )); then
+    if (( bcol >= pcol && bcol < pcol + PADDLE )); then
+      score=$((score + 1))
+      if (( score % 3 == 0 && level < ${#SPEEDS[@]} - 1 )); then
+        level=$((level + 1))
+        FRAME=${SPEEDS[level]}
       fi
-      bcol=$(( RANDOM % WIDTH ))
-      brow=0
+    else
+      lives=$((lives - 1))
     fi
+    bcol=$(( RANDOM % WIDTH ))
+    brow=0
   fi
 done
 

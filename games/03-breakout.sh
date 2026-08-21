@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # title: Breakout
-# desc: Smash every brick — bounce the ball off the paddle, arrows or a/d
+# desc: Smash the ThangDZ logo brick by brick — arrows or a/d to move
 #
 # Same real-time trick as Catch the Ball: macOS ships bash 3.2, whose
 # `read -t` takes only whole seconds and whose `read -n` forces the tty back
@@ -19,7 +19,6 @@ if [[ ! -t 0 || ! -t 1 ]]; then
 fi
 
 # ---- field size: fill the window, within sane bounds -----------------------
-BRICK_W=4
 size=$(stty size 2>/dev/null || echo "")
 rows=${size%% *}
 cols=${size##* }
@@ -29,15 +28,39 @@ cols=${size##* }
 WIDTH=$(( cols - 4 ))
 (( WIDTH > 120 )) && WIDTH=120
 (( WIDTH < 32 )) && WIDTH=32
-WIDTH=$(( (WIDTH / BRICK_W) * BRICK_W ))
 
 HEIGHT=$(( rows - 8 ))
 (( HEIGHT > 36 )) && HEIGHT=36
 (( HEIGHT < 14 )) && HEIGHT=14
 
-BRICK_ROWS=5
+# ---- the bricks spell "ThangDZ" --------------------------------------------
+# One brick per '#' of this 6-row pixel font (row 6 is the tail of the 'g').
+GLYPHS=(
+  "### #               ##  ###"
+  " #  #               # #   #"
+  " #  ##  ##  ##  ### # #  # "
+  " #  # # # # # # # # # # #  "
+  " #  # # ### # # ### ##  ###"
+  "                  #        "
+)
+TEXT_ROWS=${#GLYPHS[@]}
+TEXT_COLS=${#GLYPHS[0]}
 BRICK_TOP=1
-BCOLS=$(( WIDTH / BRICK_W ))
+
+# Each glyph pixel is BRICK_W cells wide — as wide as the field allows, so the
+# word still fits (and stays centred) in a narrow terminal.
+BRICK_W=$(( WIDTH / TEXT_COLS ))
+(( BRICK_W > 4 )) && BRICK_W=4
+(( BRICK_W < 1 )) && BRICK_W=1
+case $BRICK_W in
+  4) BRICK_STR="[##]" ;;
+  3) BRICK_STR="[#]" ;;
+  2) BRICK_STR="##" ;;
+  *) BRICK_STR="#" ;;
+esac
+BRICK_X0=$(( (WIDTH - TEXT_COLS * BRICK_W) / 2 ))
+(( BRICK_X0 < 0 )) && BRICK_X0=0
+
 PADDLE_W=$(( WIDTH / 5 ))
 (( PADDLE_W < 6 )) && PADDLE_W=6
 PADDLE_ROW=$(( HEIGHT - 1 ))
@@ -60,7 +83,6 @@ FRAME=${SPEEDS[0]}
 
 score=0
 lives=3
-left=$(( BRICK_ROWS * BCOLS ))
 quit=false
 won=false
 
@@ -70,12 +92,18 @@ bcol=$(( WIDTH / 2 ))
 drow=-1
 dcol=1
 
-# bricks[r * BCOLS + i] — 1 alive, 0 broken (every index set up front so
-# `set -u` never trips on an unset element)
+# bricks[r * TEXT_COLS + c] — 1 alive, 0 broken or never part of a letter
+# (every index is set up front so `set -u` never trips on an unset element)
 bricks=()
-for (( r = 0; r < BRICK_ROWS; r++ )); do
-  for (( i = 0; i < BCOLS; i++ )); do
-    bricks[r * BCOLS + i]=1
+left=0
+for (( r = 0; r < TEXT_ROWS; r++ )); do
+  for (( c = 0; c < TEXT_COLS; c++ )); do
+    if [[ "${GLYPHS[r]:c:1}" == "#" ]]; then
+      bricks[r * TEXT_COLS + c]=1
+      left=$(( left + 1 ))
+    else
+      bricks[r * TEXT_COLS + c]=0
+    fi
   done
 done
 
@@ -86,6 +114,10 @@ for (( c = 0; c < WIDTH; c++ )); do BORDER+="-"; done
 BORDER+="+"
 PADDLE_STR=""
 for (( c = 0; c < PADDLE_W; c++ )); do PADDLE_STR+="="; done
+BRICK_GAP=""
+for (( c = 0; c < BRICK_W; c++ )); do BRICK_GAP+=" "; done
+PAD_LEFT=""
+for (( c = 0; c < BRICK_X0; c++ )); do PAD_LEFT+=" "; done
 
 COLORS=($'\033[91m' $'\033[93m' $'\033[92m' $'\033[96m' $'\033[95m')
 RESET=$'\033[0m'
@@ -113,16 +145,18 @@ draw() {
   for (( r = 0; r < HEIGHT; r++ )); do
     color=""
     brow_in_bricks=$(( r - BRICK_TOP ))
-    if (( brow_in_bricks >= 0 && brow_in_bricks < BRICK_ROWS )); then
-      line=""
-      for (( i = 0; i < BCOLS; i++ )); do
-        if (( bricks[brow_in_bricks * BCOLS + i] )); then
-          line+="[##]"
+    if (( brow_in_bricks >= 0 && brow_in_bricks < TEXT_ROWS )); then
+      line="$PAD_LEFT"
+      for (( i = 0; i < TEXT_COLS; i++ )); do
+        if (( bricks[brow_in_bricks * TEXT_COLS + i] )); then
+          line+="$BRICK_STR"
         else
-          line+="    "
+          line+="$BRICK_GAP"
         fi
       done
-      color="${COLORS[brow_in_bricks % 5]}"
+      line="${line}${BLANK}"
+      line="${line:0:WIDTH}"
+      color="${COLORS[brow_in_bricks % ${#COLORS[@]}]}"
     else
       line="$BLANK"
     fi
@@ -195,15 +229,18 @@ reset_ball() {
 
 # Break the brick at (row, col) if one is there; 0 when it hit something.
 hit_brick() {
-  local r="$1" c="$2" br idx
+  local r="$1" c="$2" br col idx
   br=$(( r - BRICK_TOP ))
-  (( br < 0 || br >= BRICK_ROWS )) && return 1
-  idx=$(( br * BCOLS + c / BRICK_W ))
+  (( br < 0 || br >= TEXT_ROWS )) && return 1
+  (( c < BRICK_X0 )) && return 1
+  col=$(( (c - BRICK_X0) / BRICK_W ))
+  (( col >= TEXT_COLS )) && return 1
+  idx=$(( br * TEXT_COLS + col ))
   (( bricks[idx] )) || return 1
   bricks[idx]=0
   score=$(( score + 1 ))
   left=$(( left - 1 ))
-  if (( score % 12 == 0 && level < ${#SPEEDS[@]} - 1 )); then
+  if (( score % 8 == 0 && level < ${#SPEEDS[@]} - 1 )); then
     level=$(( level + 1 ))
     FRAME=${SPEEDS[level]}
   fi
@@ -276,7 +313,7 @@ done
 draw
 printf '\033[2J\033[H'
 if $won; then
-  echo "You cleared every brick! Final score: $score"
+  echo "You smashed ThangDZ! Final score: $score"
 else
   echo "Game over — final score: $score  (bricks left: $left)"
 fi
