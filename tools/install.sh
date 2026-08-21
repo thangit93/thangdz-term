@@ -5,7 +5,7 @@
 set -euo pipefail
 
 REPO_URL="${THANGDZ_REPO:-https://github.com/thangit93/thangdz-term.git}"
-DIR="${THANGDZ_DIR:-$HOME/Projects/thangdz-term}"
+DIR="${THANGDZ_DIR:-$HOME/.thangdz-term}"
 
 command -v git >/dev/null 2>&1 || { echo "thangdz-term: git is required"; exit 1; }
 

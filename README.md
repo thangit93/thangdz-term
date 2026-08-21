@@ -54,13 +54,17 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/thangit93/thangdz-term/mai
 Or manually:
 
 ```bash
-git clone https://github.com/thangit93/thangdz-term ~/Projects/thangdz-term
-cd ~/Projects/thangdz-term
+git clone https://github.com/thangit93/thangdz-term ~/.thangdz-term
+cd ~/.thangdz-term
 ./install.sh bash      # or: ./install.sh zsh | ./install.sh all
 exec bash
 ```
 
-Custom install location (default `~/Projects/thangdz-term`):
+Cloned it somewhere else? `./install.sh` moves the repo to `~/.thangdz-term`
+automatically before symlinking, so `$THANGDZ` always resolves to the same
+place regardless of where you ran `git clone`.
+
+Custom install location (default `~/.thangdz-term`):
 
 ```zsh
 THANGDZ_DIR=~/somewhere sh -c "$(curl -fsSL https://raw.githubusercontent.com/thangit93/thangdz-term/main/tools/install.sh)"
@@ -123,6 +127,7 @@ thangdz-term/
 | `dz update` | `git pull` the latest config, reload the shell     |
 | `dz reload` | restart the shell                                  |
 | `dz doctor` | health check: symlink, theme, remote               |
+| `dz uninstall` | remove thangdz-term: restore old rc file, leave the repo on disk |
 | `dz path`   | print the repo directory                           |
 | `dz logo`   | print the ThangDZ ASCII logo, or render custom text |
 | `dz help`   | show help                                          |

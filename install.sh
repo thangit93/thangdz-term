@@ -4,6 +4,21 @@
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CANONICAL_DIR="${THANGDZ_DIR:-$HOME/.thangdz-term}"
+
+# Repo isn't at the canonical location yet — move it there so $THANGDZ always
+# resolves to the same place regardless of where it was cloned/run from.
+if [[ "$REPO_DIR" != "$CANONICAL_DIR" ]]; then
+  if [[ -e "$CANONICAL_DIR" ]]; then
+    echo "Note: $CANONICAL_DIR already exists — leaving repo at $REPO_DIR" >&2
+  else
+    mkdir -p "$(dirname "$CANONICAL_DIR")"
+    mv "$REPO_DIR" "$CANONICAL_DIR"
+    REPO_DIR="$CANONICAL_DIR"
+    echo "Moved repo -> $REPO_DIR"
+  fi
+fi
+
 TARGET="${1:-}"
 
 if [[ -z "$TARGET" ]]; then

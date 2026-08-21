@@ -6,8 +6,8 @@ _my_zsh_rc="${(%):-%N}"
 export THANGDZ="${_my_zsh_rc:A:h}"
 unset _my_zsh_rc
 # If you copy this file instead of symlinking, set it manually:
-# export THANGDZ="$HOME/Projects/thangdz-term"
-[[ -f "$THANGDZ/init.zsh" ]] || export THANGDZ="$HOME/Projects/thangdz-term"
+# export THANGDZ="$HOME/.thangdz-term"
+[[ -f "$THANGDZ/init.zsh" ]] || export THANGDZ="$HOME/.thangdz-term"
 
 # Theme (themes/<name>.zsh)
 ZSH_THEME="default"

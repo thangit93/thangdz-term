@@ -16,6 +16,9 @@ dz() {
     doctor)
       _dz_doctor
       ;;
+    uninstall)
+      _dz_uninstall
+      ;;
     path)
       echo "$THANGDZ"
       ;;
@@ -46,6 +49,7 @@ Usage:
   dz update    Pull the latest config from remote and reload the shell
   dz reload    Restart the shell
   dz doctor    Health check: symlink, theme, remote
+  dz uninstall Remove thangdz-term: restore your old ~/.bashrc, leave the repo
   dz path      Print the repo directory
   dz logo      Print the ThangDZ logo (or: dz logo <text> renders via figlet)
   dz help      Show this help
@@ -134,4 +138,39 @@ _dz_doctor() {
     echo "Some checks failed — see the ✗ items above."
     return 1
   fi
+}
+
+_dz_uninstall() {
+  echo "This will remove thangdz-term from your shell:"
+  echo "  - restore your old ~/.bashrc from backup (if found), or just remove the symlink"
+  echo "  - the repo at $THANGDZ is left on disk — delete it yourself if you want"
+  echo "  - note: if install.sh added a sourcing line to ~/.bash_profile, remove it manually"
+  echo ""
+  read -r -p "Continue? [y/N] " _reply
+  if [[ "$_reply" != "y" && "$_reply" != "Y" ]]; then
+    echo "Aborted."
+    return 1
+  fi
+
+  local rc="$HOME/.bashrc"
+  local link_target
+  link_target=$(readlink "$rc" 2>/dev/null || true)
+  if [[ -z "$link_target" ]]; then
+    echo "dz: $rc is not a symlink — leaving it alone." >&2
+  else
+    rm "$rc"
+    local backup
+    backup=$(ls -t "$rc".pre-thangdz-term.* 2>/dev/null | head -n1 || true)
+    if [[ -n "$backup" ]]; then
+      mv "$backup" "$rc"
+      echo "Restored $rc from $backup"
+    else
+      echo "Removed symlink $rc (no backup found — you now have no ~/.bashrc)"
+    fi
+  fi
+
+  echo ""
+  echo "Repo left at: $THANGDZ"
+  echo "  Remove it yourself if you want:  rm -rf \"$THANGDZ\""
+  echo "Open a new terminal to finish."
 }

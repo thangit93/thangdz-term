@@ -3,7 +3,7 @@
 
 # Locate the repo directory (bash has no symlink-resolving modifier, so try known paths)
 if [[ -z "${THANGDZ:-}" ]]; then
-  for _d in "$HOME/Projects/thangdz-term" "$HOME/.thangdz-term" "$HOME/thangdz-term"; do
+  for _d in "$HOME/.thangdz-term" "$HOME/Projects/thangdz-term" "$HOME/thangdz-term"; do
     if [[ -f "$_d/init.bash" ]]; then
       export THANGDZ="$_d"
       break
@@ -11,7 +11,7 @@ if [[ -z "${THANGDZ:-}" ]]; then
   done
 fi
 # Cloned somewhere else? Set it manually: export THANGDZ="/path/to/thangdz-term"
-export THANGDZ="${THANGDZ:-$HOME/Projects/thangdz-term}"
+export THANGDZ="${THANGDZ:-$HOME/.thangdz-term}"
 
 # Theme (themes/<name>.bash)
 BASH_THEME="default"
