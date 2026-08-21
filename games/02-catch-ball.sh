@@ -16,9 +16,23 @@ if [[ ! -t 0 || ! -t 1 ]]; then
   exit 1
 fi
 
-WIDTH=32
-HEIGHT=14
-PADDLE=6
+# Field size: fill the window, within sane bounds
+size=$(stty size 2>/dev/null || echo "")
+term_rows=${size%% *}
+term_cols=${size##* }
+[[ "$term_rows" =~ ^[0-9]+$ ]] && (( term_rows > 12 )) || term_rows=24
+[[ "$term_cols" =~ ^[0-9]+$ ]] && (( term_cols > 30 )) || term_cols=80
+
+WIDTH=$(( term_cols - 4 ))
+(( WIDTH > 120 )) && WIDTH=120
+(( WIDTH < 32 )) && WIDTH=32
+HEIGHT=$(( term_rows - 7 ))
+(( HEIGHT > 36 )) && HEIGHT=36
+(( HEIGHT < 12 )) && HEIGHT=12
+
+PADDLE=$(( WIDTH / 5 ))
+(( PADDLE < 6 )) && PADDLE=6
+PADDLE_STEP=2
 FRAME=0.05
 
 score=0
@@ -27,8 +41,18 @@ pcol=$(( (WIDTH - PADDLE) / 2 ))
 bcol=$(( RANDOM % WIDTH ))
 brow=0
 frames=0
-fall=6          # frames per row — smaller is faster
+fall=3          # frames per row — smaller is faster
 quit=false
+
+# Pre-built row pieces: splicing into a blank line keeps a redraw O(rows)
+# instead of O(rows * cols), which matters once the field fills the window.
+BLANK=""
+for (( c = 0; c < WIDTH; c++ )); do BLANK+=" "; done
+BORDER="+"
+for (( c = 0; c < WIDTH; c++ )); do BORDER+="-"; done
+BORDER+="+"
+PADDLE_STR=""
+for (( c = 0; c < PADDLE; c++ )); do PADDLE_STR+="="; done
 
 old_stty=$(stty -g 2>/dev/null || true)
 
@@ -44,34 +68,27 @@ stty -echo -icanon min 0 time 0 2>/dev/null
 printf '\033[2J\033[?25l'
 
 draw() {
-  local buf border r c line
-  border="+"
-  for (( c = 0; c < WIDTH; c++ )); do border+="-"; done
-  border+="+"
-
+  local buf r line
   buf=$'\033[H'
   buf+=$(printf 'Catch the Ball   score: %-4d lives: %d' "$score" "$lives")
   buf+=$'\n'"  arrows or a/d to move, q to quit  "$'\n'
-  buf+="$border"$'\n'
+  buf+="$BORDER"$'\n'
   for (( r = 0; r < HEIGHT; r++ )); do
-    line="|"
-    for (( c = 0; c < WIDTH; c++ )); do
-      if (( r == brow && c == bcol )); then
-        line+="o"
-      elif (( r == HEIGHT - 1 && c >= pcol && c < pcol + PADDLE )); then
-        line+="="
-      else
-        line+=" "
-      fi
-    done
-    buf+="$line|"$'\n'
+    line="$BLANK"
+    if (( r == HEIGHT - 1 )); then
+      line="${line:0:pcol}${PADDLE_STR}${line:pcol + PADDLE}"
+    fi
+    if (( r == brow )); then
+      line="${line:0:bcol}o${line:bcol + 1}"
+    fi
+    buf+="|${line}|"$'\n'
   done
-  buf+="$border"$'\n'
+  buf+="$BORDER"$'\n'
   printf '%s' "$buf"
 }
 
-move_right() { (( pcol < WIDTH - PADDLE )) && pcol=$((pcol + 1)); return 0; }
-move_left()  { (( pcol > 0 )) && pcol=$((pcol - 1)); return 0; }
+move_right() { pcol=$(( pcol + PADDLE_STEP )); (( pcol > WIDTH - PADDLE )) && pcol=$(( WIDTH - PADDLE )); return 0; }
+move_left()  { pcol=$(( pcol - PADDLE_STEP )); (( pcol < 0 )) && pcol=0; return 0; }
 
 # Drain every key buffered since the last frame; never blocks.
 handle_keys() {

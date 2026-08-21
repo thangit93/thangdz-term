@@ -104,7 +104,8 @@ thangdz-term/
 │   └── zsh-syntax-highlighting
 ├── games/                # terminal mini-games (dz games / dz game <n>)
 │   ├── 01-guess-number.sh
-│   └── 02-catch-ball.sh  # interactive, keyboard-driven
+│   ├── 02-catch-ball.sh  # real-time, keyboard-driven
+│   └── 03-breakout.sh    # real-time, keyboard-driven
 └── themes/
     ├── default.zsh       # prompt: ➜ dir (branch) ✗
     └── default.bash
