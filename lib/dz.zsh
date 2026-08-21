@@ -194,7 +194,7 @@ function _dz_uninstall() {
 }
 
 function _dz_games() {
-  echo "🕹️  Mini-games — chơi bằng: dz game <số>"
+  echo "🕹️  Mini-games — play with: dz game <n>"
   echo ""
   local f num title desc
   for f in "$THANGDZ"/games/[0-9][0-9]-*.sh(N); do
@@ -208,17 +208,17 @@ function _dz_games() {
 function _dz_game() {
   local n="${1:-}"
   if [[ -z "$n" ]]; then
-    echo "Usage: dz game <số>   (xem: dz games)" >&2
+    echo "Usage: dz game <n>   (see: dz games)" >&2
     return 1
   fi
   if ! [[ "$n" =~ ^[0-9]+$ ]]; then
-    echo "dz: số không hợp lệ: $n" >&2
+    echo "dz: invalid game number: $n" >&2
     return 1
   fi
   local padded=$(printf "%02d" "$n")
   local f=("$THANGDZ"/games/"$padded"-*.sh(N))
   if [[ -z "${f[1]:-}" ]]; then
-    echo "dz: không tìm thấy game #$n — xem: dz games" >&2
+    echo "dz: no such game #$n — see: dz games" >&2
     return 1
   fi
   bash "${f[1]}"

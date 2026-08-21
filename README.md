@@ -104,9 +104,7 @@ thangdz-term/
 │   └── zsh-syntax-highlighting
 ├── games/                # terminal mini-games (dz games / dz game <n>)
 │   ├── 01-guess-number.sh
-│   ├── 02-rps.sh
-│   ├── 03-mathquiz.sh
-│   └── 04-dice.sh
+│   └── 02-catch-ball.sh  # interactive, keyboard-driven
 └── themes/
     ├── default.zsh       # prompt: ➜ dir (branch) ✗
     └── default.bash
