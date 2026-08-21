@@ -3,11 +3,38 @@
 Personal cross-shell terminal setup (zsh today, bash planned) — a minimal, fast
 replacement for Oh My Zsh, managed with the built-in `dz` CLI.
 
+## Install (new machine)
+
+One line — clone, install, and start a fresh shell:
+
+```zsh
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/thangit93/thangdz-term/main/tools/install.sh)"
+```
+
+Custom install location (default `~/Projects/thangdz-term`):
+
+```zsh
+THANGDZ_DIR=~/somewhere sh -c "$(curl -fsSL https://raw.githubusercontent.com/thangit93/thangdz-term/main/tools/install.sh)"
+```
+
+Or manually:
+
+```zsh
+git clone https://github.com/thangit93/thangdz-term ~/Projects/thangdz-term
+cd ~/Projects/thangdz-term && ./install.sh
+```
+
+`install.sh` backs up the old `.zshrc` to `~/.zshrc.pre-thangdz-term.<timestamp>`
+and symlinks `~/.zshrc` → `repo/zshrc`. From then on, edit everything inside
+the repo and let git track it all.
+
 ## Structure
 
 ```
 thangdz-term/
-├── install.sh        # install: back up old .zshrc + symlink
+├── tools/
+│   └── install.sh    # remote one-line installer (curl | sh)
+├── install.sh        # local install: back up old .zshrc + symlink
 ├── zshrc             # main file (symlinked to ~/.zshrc)
 ├── init.zsh          # loader: lib → aliases → plugins → theme
 ├── lib/              # core settings
@@ -26,17 +53,6 @@ thangdz-term/
 └── themes/
     └── default.zsh   # prompt: ➜ dir (branch) ✗
 ```
-
-## Install (new machine)
-
-```zsh
-git clone <repo-url> ~/Projects/thangdz-term
-cd ~/Projects/thangdz-term && ./install.sh
-```
-
-`install.sh` backs up the old `.zshrc` to `~/.zshrc.pre-thangdz-term.<timestamp>`
-and symlinks `~/.zshrc` → `repo/zshrc`. From then on, edit everything inside
-the repo and let git track it all.
 
 ## The dz CLI
 
