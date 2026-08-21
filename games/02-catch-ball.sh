@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 # title: Catch the Ball
-# desc: Move the paddle with arrow keys (or a/d) to catch the falling ball
+# desc: Real-time falling balls — slide the paddle with arrow keys (or a/d)
 #
-# macOS ships bash 3.2, whose `read -t` only accepts integer seconds (no
-# fractional polling), and a backgrounded reader loses the terminal as
-# its stdin in a non-interactive script. So this reads one key per tick
-# with a plain integer timeout — each tick is one real second, the ball
-# falls one row per tick, and a keypress moves the paddle within it.
+# Real-time animation on macOS's bash 3.2 needs a workaround: its `read -t`
+# only accepts whole seconds, and `read -n` puts the tty back into blocking
+# mode (VMIN=1), so neither can poll the keyboard between frames. Instead the
+# tty is left fully non-blocking (min 0 time 0) and each frame grabs whatever
+# keys are already buffered with a single `dd` read, while the external
+# `sleep` — which does accept fractions — paces the frames. Input never gates
+# the animation, so the ball keeps falling whether or not a key is pressed.
 set -uo pipefail
 
 if [[ ! -t 0 || ! -t 1 ]]; then
@@ -14,84 +16,114 @@ if [[ ! -t 0 || ! -t 1 ]]; then
   exit 1
 fi
 
-WIDTH=20
-HEIGHT=10
-PADDLE_WIDTH=5
+WIDTH=32
+HEIGHT=14
+PADDLE=6
+FRAME=0.05
 
 score=0
 lives=3
-pcol=$(( (WIDTH - PADDLE_WIDTH) / 2 ))
+pcol=$(( (WIDTH - PADDLE) / 2 ))
 bcol=$(( RANDOM % WIDTH ))
 brow=0
+frames=0
+fall=6          # frames per row — smaller is faster
+quit=false
 
 old_stty=$(stty -g 2>/dev/null || true)
 
 cleanup() {
   [[ -n "$old_stty" ]] && stty "$old_stty" 2>/dev/null
-  tput cnorm 2>/dev/null
-  printf '\n'
+  printf '\033[?25h\n'
 }
 trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-stty -echo -icanon min 1 time 0 2>/dev/null
-tput civis 2>/dev/null
-
-new_ball() {
-  bcol=$(( RANDOM % WIDTH ))
-  brow=0
-}
+stty -echo -icanon min 0 time 0 2>/dev/null
+printf '\033[2J\033[?25l'
 
 draw() {
-  clear 2>/dev/null
-  printf 'Catch the Ball — score: %d   lives: %d\n' "$score" "$lives"
-  printf '(arrow keys or a/d to move, q to quit — one move per second)\n\n'
-  local r c line
+  local buf border r c line
+  border="+"
+  for (( c = 0; c < WIDTH; c++ )); do border+="-"; done
+  border+="+"
+
+  buf=$'\033[H'
+  buf+=$(printf 'Catch the Ball   score: %-4d lives: %d' "$score" "$lives")
+  buf+=$'\n'"  arrows or a/d to move, q to quit  "$'\n'
+  buf+="$border"$'\n'
   for (( r = 0; r < HEIGHT; r++ )); do
-    line=""
+    line="|"
     for (( c = 0; c < WIDTH; c++ )); do
       if (( r == brow && c == bcol )); then
         line+="o"
-      elif (( r == HEIGHT - 1 && c >= pcol && c < pcol + PADDLE_WIDTH )); then
+      elif (( r == HEIGHT - 1 && c >= pcol && c < pcol + PADDLE )); then
         line+="="
       else
-        line+="."
+        line+=" "
       fi
     done
-    printf '%s\n' "$line"
+    buf+="$line|"$'\n'
+  done
+  buf+="$border"$'\n'
+  printf '%s' "$buf"
+}
+
+move_right() { (( pcol < WIDTH - PADDLE )) && pcol=$((pcol + 1)); return 0; }
+move_left()  { (( pcol > 0 )) && pcol=$((pcol - 1)); return 0; }
+
+# Drain every key buffered since the last frame; never blocks.
+handle_keys() {
+  local keys n i c seq
+  keys=$(dd bs=64 count=1 2>/dev/null) || keys=""
+  [[ -z "$keys" ]] && return 0
+
+  n=${#keys}
+  i=0
+  while (( i < n )); do
+    c="${keys:i:1}"
+    if [[ "$c" == $'\033' ]]; then
+      seq="${keys:i:3}"
+      case "$seq" in
+        $'\033[C') move_right ;;
+        $'\033[D') move_left ;;
+      esac
+      i=$((i + 3))
+      continue
+    fi
+    case "$c" in
+      d|D|l) move_right ;;
+      a|A|h) move_left ;;
+      q|Q) quit=true; return 0 ;;
+    esac
+    i=$((i + 1))
   done
 }
 
-quit=false
 while (( lives > 0 )) && ! $quit; do
   draw
-
-  key=""
-  if read -t 1 -n 1 key; then
-    if [[ "$key" == $'\x1b' ]]; then
-      rest=""
-      read -t 1 -n 2 rest
-      key+="$rest"
-    fi
-    case "$key" in
-      $'\x1b[C'|d|D) (( pcol < WIDTH - PADDLE_WIDTH )) && pcol=$((pcol + 1)) ;;
-      $'\x1b[D'|a|A) (( pcol > 0 )) && pcol=$((pcol - 1)) ;;
-      q|Q) quit=true ;;
-    esac
-  fi
+  sleep "$FRAME"
+  handle_keys
   $quit && break
 
-  brow=$((brow + 1))
-  if (( brow >= HEIGHT - 1 )); then
-    if (( bcol >= pcol && bcol < pcol + PADDLE_WIDTH )); then
-      score=$((score + 1))
-    else
-      lives=$((lives - 1))
+  frames=$((frames + 1))
+  if (( frames % fall == 0 )); then
+    brow=$((brow + 1))
+    if (( brow >= HEIGHT - 1 )); then
+      if (( bcol >= pcol && bcol < pcol + PADDLE )); then
+        score=$((score + 1))
+        if (( score % 3 == 0 && fall > 2 )); then
+          fall=$((fall - 1))
+        fi
+      else
+        lives=$((lives - 1))
+      fi
+      bcol=$(( RANDOM % WIDTH ))
+      brow=0
     fi
-    new_ball
   fi
 done
 
-clear
+printf '\033[2J\033[H'
 echo "Game over — final score: $score"
