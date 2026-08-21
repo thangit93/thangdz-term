@@ -1,4 +1,11 @@
-# thangdz-term
+```
+ _____ _                       ____ _____
+|_   _| |__   __ _ _ __   __ _|  _ \__  /
+  | | | '_ \ / _` | '_ \ / _` | | | |/ /
+  | | | | | | (_| | | | | (_| | |_| / /_
+  |_| |_| |_|\__,_|_| |_|\__, |____/____|
+                         |___/
+```
 
 Personal cross-shell terminal setup (zsh today, bash planned) — a minimal, fast
 replacement for Oh My Zsh, managed with the built-in `dz` CLI.
