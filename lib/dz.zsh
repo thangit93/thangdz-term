@@ -19,6 +19,13 @@ function dz() {
     uninstall)
       _dz_uninstall
       ;;
+    games)
+      _dz_games
+      ;;
+    game)
+      shift
+      _dz_game "$@"
+      ;;
     path)
       echo "$THANGDZ"
       ;;
@@ -50,6 +57,8 @@ Usage:
   dz reload    Restart the shell
   dz doctor    Health check: symlink, plugins, theme, remote
   dz uninstall Remove thangdz-term: restore your old ~/.zshrc, leave the repo
+  dz games     List the bundled terminal mini-games
+  dz game <n>  Play mini-game number <n> (see: dz games)
   dz path      Print the repo directory
   dz logo      Print the ThangDZ logo (or: dz logo <text> renders via figlet)
   dz help      Show this help
@@ -182,4 +191,35 @@ function _dz_uninstall() {
   echo "Repo left at: $THANGDZ"
   echo "  Remove it yourself if you want:  rm -rf \"$THANGDZ\""
   echo "Open a new terminal to finish."
+}
+
+function _dz_games() {
+  echo "🕹️  Mini-games — chơi bằng: dz game <số>"
+  echo ""
+  local f num title desc
+  for f in "$THANGDZ"/games/[0-9][0-9]-*.sh(N); do
+    num=${${f:t}%%-*}
+    title=$(grep -m1 '^# title:' "$f" | sed 's/^# title: *//')
+    desc=$(grep -m1 '^# desc:' "$f" | sed 's/^# desc: *//')
+    printf "  %s) %-24s %s\n" "$num" "$title" "$desc"
+  done
+}
+
+function _dz_game() {
+  local n="${1:-}"
+  if [[ -z "$n" ]]; then
+    echo "Usage: dz game <số>   (xem: dz games)" >&2
+    return 1
+  fi
+  if ! [[ "$n" =~ ^[0-9]+$ ]]; then
+    echo "dz: số không hợp lệ: $n" >&2
+    return 1
+  fi
+  local padded=$(printf "%02d" "$n")
+  local f=("$THANGDZ"/games/"$padded"-*.sh(N))
+  if [[ -z "${f[1]:-}" ]]; then
+    echo "dz: không tìm thấy game #$n — xem: dz games" >&2
+    return 1
+  fi
+  bash "${f[1]}"
 }

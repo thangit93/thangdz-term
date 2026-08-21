@@ -102,6 +102,11 @@ thangdz-term/
 ├── plugins/              # vendored zsh plugins (MIT licenses kept)
 │   ├── zsh-autosuggestions
 │   └── zsh-syntax-highlighting
+├── games/                # terminal mini-games (dz games / dz game <n>)
+│   ├── 01-guess-number.sh
+│   ├── 02-rps.sh
+│   ├── 03-mathquiz.sh
+│   └── 04-dice.sh
 └── themes/
     ├── default.zsh       # prompt: ➜ dir (branch) ✗
     └── default.bash
@@ -128,6 +133,8 @@ thangdz-term/
 | `dz reload` | restart the shell                                  |
 | `dz doctor` | health check: symlink, theme, remote               |
 | `dz uninstall` | remove thangdz-term: restore old rc file, leave the repo on disk |
+| `dz games`  | list the bundled terminal mini-games               |
+| `dz game <n>` | play mini-game number `<n>` (see `dz games`)     |
 | `dz path`   | print the repo directory                           |
 | `dz logo`   | print the ThangDZ ASCII logo, or render custom text |
 | `dz help`   | show help                                          |
