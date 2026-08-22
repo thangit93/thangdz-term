@@ -26,6 +26,9 @@ dz() {
       shift
       _dz_game "$@"
       ;;
+    servers)
+      _dz_servers
+      ;;
     path)
       echo "$THANGDZ"
       ;;
@@ -59,6 +62,7 @@ Usage:
   dz uninstall Remove thangdz-term: restore your old ~/.bashrc, leave the repo
   dz games     List the bundled terminal mini-games
   dz game <n>  Play mini-game number <n> (see: dz games)
+  dz servers   List the SSH servers defined in ~/.ssh/config
   dz path      Print the repo directory
   dz logo      Print the ThangDZ logo (or: dz logo <text> renders via figlet)
   dz help      Show this help
@@ -245,4 +249,59 @@ _dz_game() {
     return 1
   fi
   bash "$f"
+}
+
+_dz_servers() {
+  local cfg="$HOME/.ssh/config"
+  if [[ ! -f "$cfg" ]]; then
+    echo "dz: no SSH config at $cfg" >&2
+    return 1
+  fi
+
+  # One awk pass over the config: each Host block collects its User, HostName
+  # and Port; wildcard patterns (*, ?, !) are group defaults, not servers,
+  # so they are listed nowhere. `key=value` lines are normalised to
+  # whitespace-separated first — OpenSSH accepts both forms.
+  local out
+  out=$(awk '
+    function flush() {
+      if (host != "" && host !~ /[*?!]/) {
+        desc = (hn != "" ? hn : host)
+        if (usr != "") desc = usr "@" desc
+        if (prt != "") desc = desc ":" prt
+        printf "  %-20s %s\n", host, desc
+      }
+      host = ""
+    }
+    {
+      line = $0
+      sub(/^[ \t]+/, "", line)
+      if (line == "" || line ~ /^[#;]/) next
+      sub(/=/, " ", line)
+      split(line, f, /[ \t]+/)
+      key = tolower(f[1])
+      val = line
+      sub(/^[^ \t]+[ \t]+/, "", val)
+      if (key == "host") {
+        flush()
+        host = f[2]
+        hn = ""; usr = ""; prt = ""
+      } else if (host != "") {
+        if (key == "hostname") hn = val
+        else if (key == "user") usr = val
+        else if (key == "port") prt = val
+      }
+    }
+    END { flush() }
+  ' "$cfg")
+
+  echo "🖥  SSH servers — $cfg"
+  echo ""
+  if [[ -z "$out" ]]; then
+    echo "  (no hosts defined)"
+    return 0
+  fi
+  printf '%s\n' "$out"
+  echo ""
+  echo "Connect with: ssh <alias>"
 }

@@ -105,7 +105,8 @@ thangdz-term/
 ├── games/                # terminal mini-games (dz games / dz game <n>)
 │   ├── 01-guess-number.sh
 │   ├── 02-catch-ball.sh  # real-time, keyboard-driven
-│   └── 03-breakout.sh    # real-time, keyboard-driven
+│   ├── 03-breakout.sh    # real-time, keyboard-driven
+│   └── 04-snake.sh       # real-time, walls wrap around
 └── themes/
     ├── default.zsh       # prompt: ➜ dir (branch) ✗
     └── default.bash
@@ -134,6 +135,7 @@ thangdz-term/
 | `dz uninstall` | remove thangdz-term: restore old rc file, leave the repo on disk |
 | `dz games`  | list the bundled terminal mini-games               |
 | `dz game <n>` | play mini-game number `<n>` (see `dz games`)     |
+| `dz servers` | list the SSH servers defined in `~/.ssh/config`  |
 | `dz path`   | print the repo directory                           |
 | `dz logo`   | print the ThangDZ ASCII logo, or render custom text |
 | `dz help`   | show help                                          |
