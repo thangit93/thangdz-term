@@ -1,4 +1,4 @@
-# dz — CLI for managing thangdz-term (like omz)
+# dz — CLI for managing thangdz-term
 function dz() {
   local cmd="${1:-}"
   if [[ -z "$cmd" ]]; then

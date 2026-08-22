@@ -12,7 +12,7 @@ unset _my_zsh_rc
 # Theme (themes/<name>.zsh)
 ZSH_THEME="default"
 
-# Plugins (plugins/<name>/) — naming compatible with oh-my-zsh
+# Plugins (plugins/<name>/, see init.zsh for the loading order)
 plugins=(zsh-autosuggestions zsh-syntax-highlighting)
 
 # Load the framework

@@ -7,8 +7,8 @@
                          |___/
 ```
 
-Personal cross-shell terminal setup for **zsh & bash** on **macOS & Linux** — a
-minimal, fast replacement for Oh My Zsh, managed with the built-in `dz` CLI.
+Personal cross-shell terminal setup for **zsh & bash** on **macOS & Linux** —
+minimal, fast, managed with the built-in `dz` CLI.
 
 ## Install — zsh
 
@@ -144,7 +144,7 @@ thangdz-term/
   / `BASH_THEME` in `zshrc` / `bashrc`
 - **Add plugin** (zsh): `git clone <url> plugins/<name>`, then add `<name>` to
   `plugins=(...)` in `zshrc` (the loader accepts both `<name>.plugin.zsh` and
-  `<name>.zsh`, oh-my-zsh style)
+  `<name>.zsh`)
 - **Add aliases**: drop a file in `aliases/<group>.zsh` — loaded automatically
   by both shells
 - **Reload**: run `reload` (zsh) or `dz reload`
