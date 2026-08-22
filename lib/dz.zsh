@@ -53,7 +53,7 @@ function _dz_help() {
 dz — manage thangdz-term
 
 Usage:
-  dz update    Pull the latest config from remote and reload the shell
+  dz update    Hard-sync to origin/main (discards local commits), reload the shell
   dz reload    Restart the shell
   dz doctor    Health check: symlink, plugins, theme, remote
   dz uninstall Remove thangdz-term: restore your old ~/.zshrc, leave the repo
@@ -76,23 +76,52 @@ function _dz_update() {
   local prev_head
   prev_head=$(git -C "$THANGDZ" rev-parse --short HEAD)
 
-  if git -C "$THANGDZ" pull --rebase --stat; then
-    local new_head
-    new_head=$(git -C "$THANGDZ" rev-parse --short HEAD)
-    echo ""
-    if [[ "$prev_head" != "$new_head" ]]; then
-      echo "Updated $prev_head → $new_head"
-    else
-      echo "Already up to date ($new_head) — reloading anyway"
-    fi
-    echo "Reloading shell..."
-    exec zsh
-  else
-    echo ""
-    echo "Update failed. Try:
-  cd $THANGDZ && git stash && dz update" >&2
+  if ! git -C "$THANGDZ" fetch --prune origin; then
+    echo "" >&2
+    echo "dz: fetch failed — check your network / remote, then retry." >&2
     return 1
   fi
+
+  if ! git -C "$THANGDZ" rev-parse --verify -q origin/main >/dev/null; then
+    echo "dz: origin/main not found — unexpected remote branch layout." >&2
+    return 1
+  fi
+
+  # Uncommitted changes are stashed (not destroyed) so they can be recovered
+  if [[ -n "$(git -C "$THANGDZ" status --porcelain)" ]]; then
+    git -C "$THANGDZ" stash push -u -m "dz update backup $(date '+%Y-%m-%d %H:%M')" >/dev/null
+    echo "Local changes stashed — recover with: git -C $THANGDZ stash pop"
+  fi
+
+  # Hard-sync: match origin/main exactly, discarding any local commits
+  git -C "$THANGDZ" checkout -f -q main 2>/dev/null
+  git -C "$THANGDZ" reset --hard -q origin/main
+
+  local new_head
+  new_head=$(git -C "$THANGDZ" rev-parse --short HEAD)
+  echo ""
+  if [[ "$prev_head" != "$new_head" ]]; then
+    echo "Synced to origin/main: $prev_head → $new_head"
+    if ! git -C "$THANGDZ" merge-base --is-ancestor "$prev_head" origin/main 2>/dev/null; then
+      echo "Local commits discarded — recover with: git -C $THANGDZ reset $prev_head"
+    fi
+    echo ""
+    local new_log
+    new_log=$(git -C "$THANGDZ" log --oneline --no-decorate "$prev_head..$new_head" 2>/dev/null | head -n 15)
+    if [[ -n "$new_log" ]]; then
+      echo "What's new:"
+      echo "$new_log" | sed 's/^/  /'
+      local total_new
+      total_new=$(git -C "$THANGDZ" rev-list --count "$prev_head..$new_head" 2>/dev/null || echo 0)
+      if (( total_new > 15 )); then
+        echo "  … and $((total_new - 15)) more: git -C $THANGDZ log --oneline $prev_head..$new_head"
+      fi
+    fi
+  else
+    echo "Already up to date with origin/main ($new_head) — reloading anyway"
+  fi
+  echo "Reloading shell..."
+  exec zsh
 }
 
 function _dz_doctor() {

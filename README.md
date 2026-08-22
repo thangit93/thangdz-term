@@ -128,7 +128,7 @@ thangdz-term/
 
 | Command     | Description                                        |
 |-------------|----------------------------------------------------|
-| `dz update` | `git pull` the latest config, reload the shell     |
+| `dz update` | hard-sync to `origin/main` (discards local commits), reload the shell |
 | `dz reload` | restart the shell                                  |
 | `dz doctor` | health check: symlink, theme, remote               |
 | `dz uninstall` | remove thangdz-term: restore old rc file, leave the repo on disk |
@@ -148,11 +148,3 @@ thangdz-term/
 - **Add aliases**: drop a file in `aliases/<group>.zsh` — loaded automatically
   by both shells
 - **Reload**: run `reload` (zsh) or `dz reload`
-
-## Backups from the omz removal (2026-08-21)
-
-- `~/.zshrc.omz-backup-20260821` — the old omz `.zshrc`
-- `~/omz-custom-backup-20260821.tar.gz` — the whole old `~/.oh-my-zsh/custom`
-
-To reinstall oh-my-zsh:
-`sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"`
